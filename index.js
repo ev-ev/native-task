@@ -1,29 +1,21 @@
-const util = require('util');
-const { exec } = require('child_process');
-
-const execProm = util.promisify(exec);
-
 const os = require('os');
 
-const plat = os.platform();
+const platform = os.platform();
 
-const { readdir } = require('node:fs/promises');
-const { readFile } = require('node:fs/promises');
+const { readdir, readFile } = require('node:fs/promises');
 
 const OSErrMsg = 'Operating system is not supported';
 
 let winAPI;
 let darwinAPI;
-switch (plat){
+switch (platform) { // eslint-disable-line default-case
   case 'win32':
-    winAPI = require('./build/Release/winAPI');
+    winAPI = require('./lib/win/build/Release/winAPI');
     break;
   case 'darwin':
-    darwinAPI = require('./build/Release/darwinAPI');
+    darwinAPI = require('./lib/darwin/build/Release/darwinAPI');
     break;
 }
-  
-
 
 /**
  * @typedef {Object} ProcessOutputFormat
@@ -79,6 +71,10 @@ async function getLinuxProc() { // In progress. Not tested
   return { processes: out, error: null };
 }
 
+function getProcListUnsupportedOS() {
+  return Promise.reject(new Error(OSErrMsg));
+}
+
 /**
  * Gets a list of processes from the operating system
  * @example
@@ -99,30 +95,19 @@ async function getLinuxProc() { // In progress. Not tested
  * @returns {ProcessOutputFormat} Returns the list of processes or any errors encountered.
  */
 async function getProcList() {
-  try {
-    switch (plat) { // Make platform dependent var ?
-      case 'win32':
-        return winAPI.getProcessList();
-      case 'linux':
-        return await getLinuxProc();
-      case 'darwin':
-        /*const macResult = await execProm("ps -ec -o pid,command | awk '{printf \"%s,\",$1;$1=\"\";print substr($0,2)}'");
-        const macProcesses = macResult.stdout.trim()
-          .split('\n')
-          .slice(1)
-          .map((x) => x.trim().split(','));
+  const processListMap = {
+    win32: winAPI.getProcessList,
+    darwin: darwinAPI.getProcessList,
+    linux: getLinuxProc,
+  };
 
-        return { processes: macProcesses, error: macResult.stderr };*/
-        return darwinAPI.getProcessList();
-      default:
-        throw new Error(OSErrMsg);
-    }
-  } catch (ex) {
-    if (ex.stderr !== undefined) {
-      return { processes: null, error: ex.stderr };
-    }
-    return { processes: null, error: ex.message };
-  }
+  const getProcListFunction = processListMap[platform] ?? getProcListUnsupportedOS;
+
+  return getProcListFunction()
+    .catch((e) => ({
+      processes: null,
+      error: e.stderr || e.message,
+    }));
 }
 
 /*
@@ -163,15 +148,14 @@ async function getProcList() {
  * killProcByPID('5321');
  * @returns {KillOutputFormat} Returns whether the operation was successful
  */
-async function killProcByPID(pid) {
-  const tempPid = parseInt(pid, 10);
+async function killProcByPID(pidString) {
+  const pid = parseInt(pidString, 10);
 
-  if (!Number.isInteger(tempPid)) {
+  if (!Number.isInteger(pid)) {
     return { result: null, error: 'PID is not a number' };
   }
-
   try {
-    return {result: process.kill(pid, process.SIGTERM), error:null};
+    return { result: process.kill(pid, process.SIGTERM), error: null };
   } catch (ex) {
     return { result: null, error: ex.code };
   }

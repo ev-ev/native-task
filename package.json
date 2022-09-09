@@ -1,41 +1,30 @@
 {
-  "name": "node-task",
-  "version": "1.0.0",
-  "description": "A cross-platform electron app that allows running task management.",
-  "main": "sandbox_app/main.js",
-  "scripts": {
-    "start": "electron .",
-    "lint": "eslint .",
-    "build": "cd lib&&node-gyp build&&cd .."
-  },
-  "author": "ev",
-  "license": "",
-  "dependencies":{
-  },
-  "devDependencies": {
-    "eslint": "^8.2.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-plugin-import": "^2.25.3",
-    "eslint-plugin-jsx-a11y": "^6.5.1",
-    "eslint-plugin-react": "^7.28.0",
-    "eslint-plugin-react-hooks": "^4.3.0",
-    "electron-builder": "^23.1.0",
-    "electron": "^19.0.8"
-  },
-  "build": {
-    "win": {
-      "target": {
-        "target": "nsis",
-        "arch": "x64"
-      }
-    },
-    "mac": {
-      "target": {
-        "target": "default",
-        "arch": [
-          "x64"
-        ]
-      }
-    }
-  }
+   "name": "native-task",
+   "version": "1.0.0",
+   "description": "A cross-platform node module that provides tools to get and kill running process info",
+   "main": "index.js",
+   "scripts": {
+      "configureWin": "node-gyp -C lib/win configure",
+      "configureDarwin": "node-gyp -C lib/darwin configure",
+      "buildWin": "node-gyp -C lib/win build",
+      "buildDarwin": "node-gyp -C lib/darwin build"
+      "test": "mocha --recursive --exit"
+   },
+   "repository": {
+      "type": "git",
+      "url": "git+https://github.com/ev-ev/native-task"
+   },
+   "keywords": [
+      "task",
+      "task-manager"
+   ],
+   "author": "Evgeny",
+   "license": "MIT",
+   "bugs": {
+      "url": "https://github.com/ev-ev/native-task/issues"
+   },
+   "homepage": "https://github.com/ev-ev/native-task#readme",
+   "devDependencies": {
+      "mocha": "^10.0.0"
+   }
 }
